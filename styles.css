@@ -1,0 +1,101 @@
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+}
+
+/* Glassmorphism & UI Accents */
+.toolbar-btn {
+    @apply p-2 rounded hover:bg-slate-700 text-slate-400 hover:text-cyan-400 transition-all;
+}
+
+.toolbar-btn.active {
+    @apply bg-cyan-500/10 text-cyan-400 ring-1 ring-cyan-500/50;
+}
+
+.template-item {
+    @apply w-full text-left px-3 py-2 text-xs text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded transition-colors mb-0.5;
+}
+
+.category-header {
+    @apply flex items-center justify-between px-2 py-1.5 cursor-pointer hover:bg-slate-800/50 rounded transition-colors text-slate-400 font-bold text-[10px] uppercase tracking-wider;
+}
+
+.component-item {
+    @apply flex items-center gap-2 p-2 rounded cursor-grab active:cursor-grabbing hover:bg-slate-800/50 border border-transparent hover:border-slate-700 transition-all;
+}
+
+/* Sidebar toggles */
+.sidebar-collapsed-left {
+    width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+}
+
+.sidebar-collapsed-right {
+    width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+}
+
+/* Konva canvas styles */
+#canvas-container canvas {
+    background-image:
+        radial-gradient(circle, #1e293b 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+/* Animations */
+@keyframes pulse-cyan {
+    0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+}
+
+.pulse-node {
+    animation: pulse-cyan 2s infinite;
+}
+
+/* Form Styles for Properties */
+.prop-group {
+    @apply mb-4;
+}
+
+.prop-label {
+    @apply block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5;
+}
+
+.prop-input {
+    @apply w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all;
+}
+
+.prop-select {
+    @apply w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50 transition-all;
+}
+
+/* Konva stage wrapper for cursors */
+.cursor-crosshair canvas { cursor: crosshair !important; }
+.cursor-grabbing canvas { cursor: grabbing !important; }
+.cursor-grab canvas { cursor: grab !important; }
+
+/* Drag overlay */
+#drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.6;
+    display: none;
+}
