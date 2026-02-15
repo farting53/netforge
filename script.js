@@ -309,21 +309,59 @@ const iconCache = {};
 async function getIconImage(iconName, color = '#22d3ee') {
     const cacheKey = `${iconName}-${color}`;
     if (iconCache[cacheKey]) return iconCache[cacheKey];
-    const temp = document.createElement('div');
-    temp.innerHTML = `<i data-lucide="${iconName}"></i>`;
-    document.body.appendChild(temp);
-    lucide.createIcons({ attrs: { stroke: color, 'stroke-width': 2 }, nameAttr: 'data-lucide', icons: lucide.icons, root: temp });
-    const svg = temp.querySelector('svg');
-    const svgData = new XMLSerializer().serializeToString(svg);
-    document.body.removeChild(temp);
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => { iconCache[cacheKey] = img; resolve(img); };
-        img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
-    });
+
+    try {
+        const temp = document.createElement('div');
+        temp.innerHTML = `<i data-lucide="${iconName}"></i>`;
+        document.body.appendChild(temp);
+
+        const options = {
+            attrs: { stroke: color, 'stroke-width': 2 },
+            nameAttr: 'data-lucide',
+            root: temp
+        };
+        if (typeof lucide !== 'undefined' && lucide.icons) {
+            options.icons = lucide.icons;
+        }
+
+        lucide.createIcons(options);
+
+        const svg = temp.querySelector('svg');
+        if (!svg) {
+            console.error(`Icon "${iconName}" not found.`);
+            document.body.removeChild(temp);
+            return null;
+        }
+
+        const svgData = new XMLSerializer().serializeToString(svg);
+        document.body.removeChild(temp);
+
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                iconCache[cacheKey] = img;
+                resolve(img);
+            };
+            img.onerror = () => {
+                console.error(`Failed to load icon image: ${iconName}`);
+                resolve(null);
+            };
+            try {
+                const base64 = btoa(unescape(encodeURIComponent(svgData)));
+                img.src = 'data:image/svg+xml;base64,' + base64;
+            } catch (e) {
+                console.error("Encoding error:", e);
+                resolve(null);
+            }
+        });
+    } catch (err) {
+        console.error("Error in getIconImage:", err);
+        return null;
+    }
 }
 
 async function addDeviceToCanvas(item, pos) {
+    console.log("Placing device:", item.name, pos);
     const snappedPos = State.snapToGrid ? { x: Math.round(pos.x / GRID_SIZE) * GRID_SIZE, y: Math.round(pos.y / GRID_SIZE) * GRID_SIZE } : pos;
     const group = new Konva.Group({
         x: snappedPos.x,
@@ -335,7 +373,14 @@ async function addDeviceToCanvas(item, pos) {
     });
 
     const iconImg = await getIconImage(item.icon);
-    const icon = new Konva.Image({ image: iconImg, x: -20, y: -20, width: 40, height: 40 });
+
+    let icon;
+    if (iconImg) {
+        icon = new Konva.Image({ image: iconImg, x: -20, y: -20, width: 40, height: 40 });
+    } else {
+        icon = new Konva.Circle({ radius: 15, fill: '#06b2d2', x: 0, y: 0 });
+    }
+
     const label = new Konva.Text({ text: item.name, fontSize: 10, fontFamily: 'Inter, sans-serif', fill: '#94a3b8', align: 'center', width: 100, x: -50, y: 25 });
 
     group.add(icon);
@@ -375,11 +420,14 @@ async function addDeviceToCanvas(item, pos) {
 function handleWallClick(pos, button) {
     if (button === 2) { cancelDrawing(); return; }
     if (!State.drawing.isDrawing) {
+        console.log("Start wall:", pos);
         State.drawing.isDrawing = true;
         State.drawing.startPoint = pos;
         State.drawing.tempShape = new Konva.Line({ points: [pos.x, pos.y, pos.x, pos.y], stroke: '#475569', strokeWidth: 16, lineCap: 'round', opacity: 0.5, dash: [10, 5] });
         State.layers.background.add(State.drawing.tempShape);
+        State.layers.background.batchDraw();
     } else {
+        console.log("Finish wall:", pos);
         const wall = new Konva.Line({ points: [State.drawing.startPoint.x, State.drawing.startPoint.y, pos.x, pos.y], stroke: '#475569', strokeWidth: 16, lineCap: 'round', name: 'wall', id: 'wall-' + Date.now() });
         wall.on('click', (e) => { if (State.selectedTool === 'select') { e.cancelBubble = true; selectItem(wall); } });
         State.layers.background.add(wall);
@@ -390,10 +438,12 @@ function handleWallClick(pos, button) {
 }
 
 function startRoomDrawing(pos) {
+    console.log("Start room:", pos);
     State.drawing.isDrawing = true;
     State.drawing.startPoint = pos;
     State.drawing.tempShape = new Konva.Rect({ x: pos.x, y: pos.y, width: 0, height: 0, stroke: '#475569', strokeWidth: 2, dash: [5, 5], cornerRadius: 8, fill: 'rgba(71, 85, 105, 0.1)' });
     State.layers.background.add(State.drawing.tempShape);
+    State.layers.background.batchDraw();
 }
 
 function finishRoomDrawing() {
@@ -407,6 +457,7 @@ function finishRoomDrawing() {
 }
 
 function placeDoor(pos) {
+    console.log("Place door:", pos);
     const doorGroup = new Konva.Group({ x: pos.x, y: pos.y, draggable: true, name: 'door', id: 'door-' + Date.now() });
     doorGroup.add(new Konva.Rect({ x: -15, y: -5, width: 30, height: 10, fill: '#94a3b8', cornerRadius: 2 }));
     doorGroup.add(new Konva.Text({ text: '🚪', fontSize: 16, x: -8, y: -10 }));
